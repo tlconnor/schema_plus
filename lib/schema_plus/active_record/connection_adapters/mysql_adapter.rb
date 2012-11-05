@@ -105,6 +105,23 @@ module SchemaPlus
           sql
         end
 
+        def functions
+          Array.new.tap do |functions|
+            execute("SHOW FUNCTION STATUS WHERE db = SCHEMA()").each do |db, name, *other|
+              functions << name
+            end
+          end
+        end
+
+        def function(name)
+          execute("SHOW CREATE FUNCTION #{name}").fetch_row[2]
+        end
+
+        def create_function(name, function_definition)
+          execute "DROP FUNCTION IF EXISTS #{name}"
+          execute(function_definition.gsub("\\n", '\n'))
+        end
+
         def default_expr_valid?(expr)
           false # only the TIMESTAMP column accepts SQL column defaults and rails uses DATETIME
         end

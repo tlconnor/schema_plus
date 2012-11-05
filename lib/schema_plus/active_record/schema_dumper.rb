@@ -26,10 +26,19 @@ module SchemaPlus
           alias_method_chain :table, :schema_plus
           alias_method_chain :tables, :schema_plus
           alias_method_chain :indexes, :schema_plus
+          alias_method_chain :dump, :schema_plus
         end
       end
 
       private
+
+      def dump_with_schema_plus(stream)
+        header(stream)
+        tables(stream)
+        functions(stream)
+        trailer(stream)
+        stream
+      end
 
       def break_fk_cycles #:nodoc:
         strongly_connected_components.select{|component| component.size > 1}.each do |tables|
@@ -134,6 +143,13 @@ module SchemaPlus
 
       def dump_foreign_keys(foreign_keys, opts={}) #:nodoc:
         foreign_keys.collect{ |foreign_key| "  " + foreign_key.to_dump(:inline => opts[:inline]) }.sort.join
+      end
+
+      def functions(stream)
+        @connection.functions.each do |function|
+          stream.puts "  create_function '#{function}', \"#{@connection.function(function).gsub(/[\r\n]+/, '\\n')}\"\n"
+        end
+        
       end
     end
   end
